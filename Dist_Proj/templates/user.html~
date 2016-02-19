@@ -2,12 +2,29 @@
 	<head>
 		<title> Distributed Project </title>
 	</head>
+
+	<input type = "submit" value = "Logout" style = "float: right;"> </input>
+ 	</h1>
+ 	<form  method = "GET" id = "login_Form" style = "float: right;">
+      Find:  
+      <input type = "text" required = "required" placeholder = "Username" name = "Username"></input>
+      <input type = "submit" name = "submit" value = "Add"></input>
+  </form>
+  <p style = "float: right;"> {{aferror}} </p>
+
 	<body>
 		<h1> Welcome {{user}} !</h1>
+    <ul>
+    {% for message in messages %}
+    <li>{{message}}</li>
+    {% endfor %}
+    </ul>		
+		<p>
+			<form method ="POST">
+				<textarea name="tweet" cols="50" rows ="5"> Enter your thoughts for everyone to know! </textarea>
+				<input type="submit" name="submit" value="Post"></input>
+			</form>
+		</p> 
 	</body>
-
-	
-
-
 
 </html>
