@@ -3,25 +3,39 @@
 		<title> Distributed Project </title>
 	</head>
 
-	<input type = "submit" value = "Logout" style = "float: right;"> </input>
- 	</h1>
- 	<form  method = "GET" id = "login_Form" style = "float: right;">
-      Find:  
-      <input type = "text" required = "required" placeholder = "Username" name = "Username"></input>
-      <input type = "submit" name = "submit" value = "Add"></input>
-  </form>
-  <p style = "float: right;"> {{aferror}} </p>
-
 	<body>
+	 	</h1>
+	 	<form method = "POST" id = "login_Form" style = "float: right;">
+				<input type = "submit" name = "submit" value = "Logout"></input>
+				<input type = "submit" name = "submit" value = "Delete Account"></input>
+		</form>
+
+	 	<form method = "POST" id = "login_Form" style = "float: right; clear: right;">
+				<input type = "text" placeholder = "Username" name = "Username"></input>
+				<input type = "submit" name = "submit" value = "Add"></input> 
+		</form>
+
+		<p> {{aferror}} </p>
+		<h3 style = "float: right; margin-top:20px; clear:right; padding-right:50px"> Your friends: </h3>
+		
+		<form method = "POST">
+		  <ul style = "float: right; margin-top:5px; clear:right; padding-right:50px" >
+		  {% for friend in friends %}
+		  <li><input type = "submit" name = "submit" value = {{friend}} ></input></li>
+		  {% endfor %}
+		  </ul>
+		</form>
+
 		<h1> Welcome {{user}} !</h1>
-    <ul>
+		<h3> Viewing {{displayedPage}} </h3>
+    <ul style = "padding-left: 2px; list-style-type: none; width: 50%">
     {% for message in messages %}
-    <li>{{message}}</li>
+    <li style = "border-bottom: solid 1px #c2c2a3; padding: 10px 10px 20px 0px;" >{{message}}</li>
     {% endfor %}
     </ul>		
 		<p>
 			<form method ="POST">
-				<textarea name="tweet" cols="50" rows ="5"> Enter your thoughts for everyone to know! </textarea>
+				<textarea name="tweet" cols="50" rows ="5"> </textarea>
 				<input type="submit" name="submit" value="Post"></input>
 			</form>
 		</p> 
