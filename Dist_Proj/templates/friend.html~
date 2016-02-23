@@ -5,10 +5,13 @@
 
 	<body>
 	 	</h1>
-	 	<form method = "POST" id = "login_Form" style = "float: right;"> 
-				<input type = "submit" name = "submit" value = "Logout" style = "float: right;"> </input>
-		    <input type = "text" placeholder = "Username" name = "Username"></input>
-		    <input type = "submit" name = "submit" value = "Add"></input>
+	 	<form method = "POST" id = "login_Form" style = "float: right;">
+				<input type = "submit" name = "submit" value = "Logout"></input>
+		</form>
+
+	 	<form method = "POST" id = "login_Form" style = "float: right; clear: right;">
+				<input type = "text" placeholder = "Username" name = "Username"></input>
+				<input type = "submit" name = "submit" value = "Add"></input> 
 		</form>
 
 		<p> {{aferror}} </p>
