@@ -1,6 +1,15 @@
 from flask import Flask, session, redirect, url_for, escape, request, render_template
-import os
+import os, socket
 app = Flask(__name__)
+
+
+def send(lineOfText):
+	s = socket.socket()         # Create a socket object
+	host = "127.0.0.1" # Where do you want to connect
+	port = 13002                # port to connect to
+	s.connect((host, port))
+	s.send(lineOfText.encode())
+	s.close                     # Close the socket when done
 
 def login(username, password, fileOfUsers):
 	with open(fileOfUsers, "r") as fo:
@@ -70,6 +79,8 @@ def delete_account(user):
 def home():
     if request.method=='POST':
 		if request.form["submit"] == "Login":
+			str = "LOGIN" + request.form["Username"] + ' ' + request.form["Password"] + " \n"
+			send(str)
 			return login(request.form["Username"], request.form["Password"], "listOfUsers.txt")			
 		elif request.form["submit"] == "Register":
 			return register(request.form["Username"], request.form["Password"], "listOfUsers.txt")
@@ -169,7 +180,10 @@ def logout():
     # remove the username from the session if it's there
     session.pop(session['username'], None)
     return redirect(url_for('home'))
+    
+
 
 
 app.secret_key = "rj;elkjxia"
 app.run("127.0.0.1", 13000, debug=True)
+
