@@ -2,27 +2,31 @@
 
 using namespace std;
 
-namespace appFunctions {
+
 
 string login() {
-	string s = "LOGIN";
-	return s;
+	return "Hello";
 }
 
-bool register(const string& user, const string& pass) {
-	string line; 
-	vector<string> tokens;
 
+
+string regUser(string& user, string& pass) {
+	string line; 								
 	ifstream listUsers;
 	listUsers.open("listOfUsers.txt");
 	while (getline(listUsers,line)) {
-		copy(istream_iterator<string>(iss), istream_iterator<string>(),back_inserter(tokens));
+		vector<string> tokens;
+		istringstream userPass(line);
+    	copy(istream_iterator<string>(userPass),istream_iterator<string>(),back_inserter(tokens));  //Parse the string based on white space;
+    	if (tokens[0] == user) {return "TAKEN";}		
 	}
-	cout << tokens.size() << tokens[0] << tokens[1] << endl;
-	return 1;
-}
-
-
-
-
+	listUsers.close();
+	ofstream listUsersW ("listOfUsers.txt", ios_base::app);  //Open up file to be written, ios_base::app makes it able to append
+	listUsersW << user + ' ' + pass + " \n";
+	const string fileName = user + "Msgs" ".txt";
+	const string fileName2 = user + "Friends" ".txt";
+	ofstream userFile(fileName.c_str());    //Make the Msgs file for user;
+	ofstream userFile2(fileName2.c_str());	//Make the Friends file for user;
+	//listUsersW.close();
+	return "REGISTERED";		
 }

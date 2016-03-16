@@ -22,9 +22,9 @@
 #define	BUFFSIZE	8192    // buffer size for reads and writes
 #define  SA struct sockaddr
 #define	LISTENQ		1024	// 2nd argument to listen()
-#define PORT_NUM        13002
+#define PORT_NUM    13002
 
-using namespace appFunctions;
+
 using namespace std;
 
 int main(int argc, char **argv) {
@@ -62,40 +62,38 @@ int main(int argc, char **argv) {
         perror("Unable to listen");
         exit(3);
     }
-
     
-    register("Franky", "Chen");
     for ( ; ; ) {
         
-        // 5. Block until someone connects.
-        //    We could provide a sockaddr if we wanted to know details of whom
-        //    we are talking to.
-        //    Last arg is where to put the size of the sockaddr if
-        //    we asked for one
+    // 5. Block until someone connects.
+    //    We could provide a sockaddr if we wanted to know details of whom
+    //    we are talking to.
+    //    Last arg is where to put the size of the sockaddr if
+    //    we asked for one
 	fprintf(stderr, "Ready to connect.\n");
     if ((connfd = accept(listenfd, (SA *) NULL, NULL)) == -1) {
         perror("accept failed");
         exit(4);
 	}
+    
     fprintf(stderr, "Connected\n");
+    memset(buff, 0, sizeof(buff)); //Clear buffer
+    
+    recv(connfd, buff, sizeof(buff), 0); //Wait and receive something
+    string s(buff);
+    istringstream recvMsg(s);
+    vector<string> tokens;
+    copy(istream_iterator<string>(recvMsg),istream_iterator<string>(),back_inserter(tokens)); //Parse the message
+    if (tokens[0] == "REGISTER") {
+        string returnMsg = regUser(tokens[1], tokens[2]);                          //Register user if message is to register 
+        memset(buff, 0, sizeof(buff));                                             
+        strcpy(buff, returnMsg.c_str());                                           //Convert the string so its able to be sent
+        send(connfd, buff, sizeof(buff), 0);                                       //Send to client
+    }
+    
 
-        
-        //cout << "Length after read: " <<  strlen(buff) << endl;
-        //printf("%s", buff);
-        //cout << endl;
-        //const string s = login();
-        memset(buff, 0, sizeof(buff));
-        //strcpy(buff, "Hello!");
-        
-        //snprintf(buff, sizeof(buff), "%s", ctime(&ticks));
-        //cout << sizeof(buff) << endl;
-        //send(connfd, buff, sizeof(buff), 0);
-        //memset(buff, 0, sizeof(buff));
-        cout << "Why don't you work?" << endl;
-        recv(connfd, buff, sizeof(buff), 0);
-        printf("%s", buff);
-        // 6. Close the connection with the current client and go back
-        //    for another.
-        close(connfd);
+    // 6. Close the connection with the current client and go back
+    //    for another.
+    close(connfd);
     }
 }

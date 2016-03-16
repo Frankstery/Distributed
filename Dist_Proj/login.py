@@ -9,7 +9,11 @@ def send(lineOfText):
 	port = 13002                # port to connect to
 	s.connect((host, port))
 	s.send(lineOfText.encode())
+	returnMsg =s.recv(1024)
+	return returnMsg
 	s.close                     # Close the socket when done
+
+
 
 def login(username, password, fileOfUsers):
 	with open(fileOfUsers, "r") as fo:
@@ -20,20 +24,6 @@ def login(username, password, fileOfUsers):
 				return redirect("/user")
 	return render_template("login.html", error = "Invalid Username or Password")
 
-
-
-def register(username, password, fileOfUsers):
-	with open(fileOfUsers,"a+") as fo:							#a+ is file descriptor for reading and appending
-		for line in fo:
-			user = line.split()
-			if user[0] == username:								#Checks if username is already taken
-				return render_template("login.html", error = "Username already taken")				
-		fo.write(username + ' ')								#Writes the value of username into the file
-		fo.write(password + ' ' + "\n") 						#Writers the value of password into file
-	open(username + 'Msgs' + '.txt', 'w')						#Creates the files
-	with open(username + 'Friends' + '.txt', 'w') as start:
-		start.write("Home" + ' ' + '\n')
-	return redirect(url_for("welcomeToUser", loginName = username))
 
 
 
@@ -83,7 +73,14 @@ def home():
 			send(str)
 			return login(request.form["Username"], request.form["Password"], "listOfUsers.txt")			
 		elif request.form["submit"] == "Register":
-			return register(request.form["Username"], request.form["Password"], "listOfUsers.txt")
+			str = "REGISTER" + ' ' + request.form["Username"] + ' ' + request.form["Password"] + " \n"
+			returnMsg = send(str)
+			print returnMsg
+			print len(returnMsg)
+			if returnMsg == "REGISTERED":
+				return redirect(url_for("welcomeToUser", loginName = username))
+			else:
+				return render_template("login.html", error = "Username already taken")			
     return render_template("login.html")
 
 

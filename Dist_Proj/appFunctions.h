@@ -10,12 +10,9 @@
 #include <iterator>
 
 
-
-namespace appFunctions {
-
 std::string login();
-bool register(const std::string& user, const std::string& pass);
+std::string regUser(std::string& user, std::string& pass);
 
-}
+
 
 #endif
