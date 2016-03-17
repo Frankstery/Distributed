@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
         perror("Unable to listen");
         exit(3);
     }
-    deleteAccount("Franky");
+    
 
     for ( ; ; ) {
         
@@ -125,7 +125,8 @@ int main(int argc, char **argv) {
 
     }
     else if (tokens[0] == "DELETE") {
-
+        string returnMsg = deleteAccount(tokens[1]);
+        send(connfd, returnMsg.c_str(), strlen(returnMsg.c_str()), 0);
     }
 
     // 6. Close the connection with the current client and go back

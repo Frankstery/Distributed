@@ -29,43 +29,6 @@ def sendForMsg(lineOfText):
 	s.close    
 
 
-def add_friend(friend, fileOfFriends):
-	with open("listOfUsers.txt", "r") as fo:
-		for line in fo:
-			user = line.split()
-			if user[0] == friend:
-				with open(fileOfFriends, 'a+') as fof:
-					for line in fof:
-						if line == friend:
-							return "Friend already added"
-						elif friend == session['username']:
-							return "You can't add yourself"
- 					fof.write(friend + '\n')
-					return
-	return "No such User"				
-
-def deleteLineFromFile(fileName, user):
-	f = open(fileName,"r")
-	lines = f.readlines()
-	f.close()
-	f = open(fileName,"w")
-	for line in lines:
-		username = line.split()
-  		if username[0] != user:
-			f.write(line)
-	f.close()
-
-
-def delete_account(user):
-	deleteLineFromFile("listOfUsers.txt", user)
-	for i in os.listdir(os.getcwd()):
-		if i == user + 'Friends' + '.txt' or i == user + 'Msgs' + '.txt':
-			os.remove(i)
-		if i.endswith("Friends.txt") and user not in i: 
-			for line in i:
-				deleteLineFromFile(i, user)
-
-
 
 @app.route("/", methods=['post', 'get'])
 def home():
@@ -99,6 +62,8 @@ def welcomeToUser():
 
 @app.route("/user", methods=['POST', 'GET'])
 def loadUserData():
+	if 'username' not in session:
+		return redirect(url_for('home'))
 	username = session['username']											#Gets the username of the person
 	listOfMsgs = []
 	listofFriends = []
@@ -173,7 +138,8 @@ def delete():
 		if request.form["submit"] == "Back":
 			return redirect("/user")
 		elif request.form["submit"] == "Confirm Delete":
-			send("DELETE");
+			str = "DELETE " + session['username']
+			send(str)
 			#delete_account(session['username'])
 			return redirect(url_for('home'))
 	return render_template("removeAccount.html")
@@ -183,7 +149,8 @@ def delete():
 @app.route('/logout')
 def logout():
     # remove the username from the session if it's there
-    session.pop(session['username'], None)
+    session.pop('username', None)
+    #print session[0]
     return redirect(url_for('home'))
     
 

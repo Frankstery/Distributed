@@ -108,6 +108,7 @@ string addPost(const string& user, const string& msg) {
 }
 
 void removeLineFromFile(const string& file, const string& user) {
+    cout << "File to remove line: " << file << endl;
 	string lineFromFile;
     ifstream listUsers;
     listUsers.open(file.c_str());
@@ -137,8 +138,11 @@ string deleteAccount(const string& user) {
 	    string s = ent->d_name;
 	    string userFriends = user + "Friends.txt";
 	    string userMsgs = user + "Msgs.txt";
-	    if (s == userFriends || s == userMsgs) remove(s.c_str()); //If it is the users Friends or Msgs files, remove them
-	    if (s.find("Friends.txt") != string::npos) {			  //Delete the user from every other persons' friends list
+	    if (s == userFriends || s == userMsgs) {
+            cout << "File to be removed: " << s << endl;
+            remove(s.c_str()); //If it is the users Friends or Msgs files, remove them
+        }
+	    else if (s.find("Friends.txt") != string::npos) {			  //Delete the user from every other persons' friends list
 	    	removeLineFromFile(s,user);
 	    }
 	  }
