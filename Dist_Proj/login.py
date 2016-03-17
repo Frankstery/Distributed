@@ -13,18 +13,20 @@ def send(lineOfText):
 	return returnMsg
 	s.close                     # Close the socket when done
 
-
-
-def login(username, password, fileOfUsers):
-	with open(fileOfUsers, "r") as fo:
-		for line in fo:
-			user = line.split()
-			if user[0] == username and user[1] == password: 	#Checks if username and pass matches
-				session['username'] = username
-				return redirect("/user")
-	return render_template("login.html", error = "Invalid Username or Password")
-
-
+def sendForMsg(lineOfText):
+	s = socket.socket()         # Create a socket object
+	host = "127.0.0.1" # Where do you want to connect
+	port = 13002                # port to connect to
+	s.connect((host, port))
+	s.send(lineOfText.encode())
+	fullMsgs = [];
+	while True:
+		if returnMsg == "End of Messages":
+			break;
+		returnMsg =s.recv(1024);
+		fullMsgs.append(returnMsg);
+	return fullMsgs
+	s.close    
 
 
 def add_friend(friend, fileOfFriends):
@@ -68,19 +70,21 @@ def delete_account(user):
 @app.route("/", methods=['post', 'get'])
 def home():
     if request.method=='POST':
-		if request.form["submit"] == "Login":
-			str = "LOGIN" + request.form["Username"] + ' ' + request.form["Password"] + " \n"
-			send(str)
-			return login(request.form["Username"], request.form["Password"], "listOfUsers.txt")			
-		elif request.form["submit"] == "Register":
-			str = "REGISTER" + ' ' + request.form["Username"] + ' ' + request.form["Password"] + " \n"
-			returnMsg = send(str)
-			print returnMsg
-			print len(returnMsg)
-			if returnMsg == "REGISTERED":
-				return redirect(url_for("welcomeToUser", loginName = username))
-			else:
-				return render_template("login.html", error = "Username already taken")			
+        if request.form["submit"] == "Login":
+            str = "LOGIN" + ' ' + request.form["Username"] + ' ' + request.form["Password"] + " \n"
+            returnMsg = send(str)
+            if returnMsg == "LOGIN":
+                session["username"] = request.form["Username"]
+                return redirect("/user")
+            else:
+                return render_template("login.html", error = "Invalid Username or Password")   
+        elif request.form["submit"] == "Register":
+            str = "REGISTER" + ' ' + request.form["Username"] + ' ' + request.form["Password"] + " \n"
+            returnMsg = send(str)
+            if returnMsg == "REGISTERED":
+				return redirect(url_for("welcomeToUser", loginName = request.form["Username"]))
+            else:
+                return render_template("login.html", error = "Username already taken")         
     return render_template("login.html")
 
 
@@ -93,31 +97,34 @@ def welcomeToUser():
 	return render_template("welcome.html")
 
 
-
-
 @app.route("/user", methods=['POST', 'GET'])
 def loadUserData():
-
 	username = session['username']											#Gets the username of the person
 	listOfMsgs = []
-	listOfFriends = []	
-	
-	with open(username + 'Friends' + '.txt', 'a+') as fo:
-		for line in fo:
-			listOfFriends.append(line)
+	listofFriends = []
+	str = "GETFRIENDS " + username
+	returnMsg = send(str)
+	listOfFriends = returnMsg.split()
+	# with open(username + 'Friends' + '.txt', 'a+') as fo:
+	# 	for line in fo:
+	# 		listOfFriends.append(line)
 																	
-	with open(username + 'Msgs' + '.txt', 'a+') as fo:						#Loads all the data into two arrays
-			for line in fo:
-				listOfMsgs.append(line)  
-
+	# with open(username + 'Msgs' + '.txt', 'a+') as fo:						#Loads all the data into two arrays
+	# 		for line in fo:
+	# 			listOfMsgs.append(line)  
 	if request.method=='POST':
 		if request.form["submit"] == "Post":
-			with open(username + 'Msgs' + '.txt', 'a+') as fo:
-				fo.write(request.form["tweet"] + ' ' + "\n")					#Gets the values inside the textbox and adds to file
-				return redirect("/user")
+			str = "ADDMSG" + ' ' + username + ' ' + request.form["tweet"];
+			print send(str)
+			# with open(username + 'Msgs' + '.txt', 'a+') as fo:
+			# 	fo.write(request.form["tweet"] + ' ' + "\n")					#Gets the values inside the textbox and adds to file
+			# 	return redirect("/user")
 		elif request.form["submit"] == "Add":
-				errormsg = add_friend(request.form["Username"], username + 'Friends' + '.txt')
-				return redirect("/user")			
+			#           errormsg = add_friend(request.form["Username"], username + 'Friends' + '.txt')
+			#           return redirect("/user")
+			str = "ADDFRIEND " + username + " " + request.form["Username"] + " " + username + "Friends" + ".txt"
+			errormsg = send(str)
+			return redirect("/user")			
 		elif request.form["submit"] == "Logout":
 			return redirect("/logout")
 		elif request.form["submit"] == "Delete Account":
@@ -166,7 +173,8 @@ def delete():
 		if request.form["submit"] == "Back":
 			return redirect("/user")
 		elif request.form["submit"] == "Confirm Delete":
-			delete_account(session['username'])
+			send("DELETE");
+			#delete_account(session['username'])
 			return redirect(url_for('home'))
 	return render_template("removeAccount.html")
 	
@@ -178,7 +186,6 @@ def logout():
     session.pop(session['username'], None)
     return redirect(url_for('home'))
     
-
 
 
 app.secret_key = "rj;elkjxia"

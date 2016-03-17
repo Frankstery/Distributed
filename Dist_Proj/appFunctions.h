@@ -8,10 +8,17 @@
 #include <sstream>
 #include <algorithm>
 #include <iterator>
+#include <dirent.h>
+#include <time.h>
 
 
-std::string login();
-std::string regUser(std::string& user, std::string& pass);
+std::string logUser(const std::string& user, const std::string& pass);
+std::string regUser(const std::string& user, const std::string& pass);
+std::string addFriend(const std::string& user, const std::string& userFriend, const std::string& fileName);
+std::string getFriends(const std::string& user);
+std::string addPost(const std::string& user, const std::string& msg);
+std::string getPosts();
+std::string deleteAccount(const std::string& user);
 
 
 
