@@ -2,6 +2,7 @@
 
 using namespace std;
 
+//Function to split the string base on white space
 vector<string> splitter(const string& line){
     vector<string> tokens;
     istringstream userPass(line);
@@ -9,15 +10,14 @@ vector<string> splitter(const string& line){
     return tokens;
 }
 
+
 string logUser(const string& user, const string& pass) {
     string line;
     ifstream listUsers;
     listUsers.open("listOfUsers.txt");
     while(getline(listUsers, line)){
         //Split line by white space
-        vector<string> tokens;
-        istringstream userPass(line);
-        copy(istream_iterator<string>(userPass), istream_iterator<string>(), back_inserter(tokens));
+        vector<string> tokens = splitter(line);
         //If username and password matches
         if(tokens[0] == user && tokens[1] == pass){
             return "LOGIN";
@@ -46,7 +46,10 @@ string regUser(const string& user, const string& pass) {
 	const string fileName2 = user + "Friends" ".txt";
 	ofstream userFile(fileName.c_str());    //Make the Msgs file for user;
 	ofstream userFile2(fileName2.c_str());	//Make the Friends file for user;
-	//listUsersW.close();
+    userFile2 << "Home\n";
+	listUsersW.close();
+    userFile.close();
+    userFile2.close();
 	return "REGISTERED";		
 }
 
@@ -101,14 +104,38 @@ string addPost(const string& user, const string& msg) {
 	userMsgs << msg << " \n" << "\n";
 	time_t ticks = time(NULL);
 	string str(ctime(&ticks));
-	userMsgs << str << " \n";
-	userMsgs << char(187) << char(187) << char(187) << " \n";
+	userMsgs << '-' << str << " \n";
+	userMsgs << "$a$b$c$1$2$3\n";
 	userMsgs.close();
 	return "SUCCESS";
 }
 
+vector<string> getPosts(const string& user){
+    vector<string> allMessages;
+   
+    //Creating the separator to show different messages
+    string a = "$a$b$c$1$2$3";
+   
+    string s = user + "Msgs.txt";
+    ifstream userMsgs(s.c_str());
+    string aMessage = "";
+    string line;
+    while(getline(userMsgs, line)){
+        //If line isn't separator append to messages
+        if(line != a){
+            aMessage = aMessage + line + "\n";
+        }
+        //If line is separator push the message to vector and reset it
+        else{
+            allMessages.push_back(aMessage);
+            aMessage = "";
+        }
+    }
+    userMsgs.close();
+    return allMessages;
+}
+
 void removeLineFromFile(const string& file, const string& user) {
-    cout << "File to remove line: " << file << endl;
 	string lineFromFile;
     ifstream listUsers;
     listUsers.open(file.c_str());
@@ -139,7 +166,6 @@ string deleteAccount(const string& user) {
 	    string userFriends = user + "Friends.txt";
 	    string userMsgs = user + "Msgs.txt";
 	    if (s == userFriends || s == userMsgs) {
-            cout << "File to be removed: " << s << endl;
             remove(s.c_str()); //If it is the users Friends or Msgs files, remove them
         }
 	    else if (s.find("Friends.txt") != string::npos) {			  //Delete the user from every other persons' friends list

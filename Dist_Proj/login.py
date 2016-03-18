@@ -20,13 +20,17 @@ def sendForMsg(lineOfText):
 	s.connect((host, port))
 	s.send(lineOfText.encode())
 	fullMsgs = [];
-	while True:
-		if returnMsg == "End of Messages":
-			break;
-		returnMsg =s.recv(1024);
-		fullMsgs.append(returnMsg);
-	return fullMsgs
-	s.close    
+	last = "End of Messages"
+	while 1:
+		returnMsg = s.recv(1024)
+		if returnMsg == last:
+			s.send("DONEMSGS")
+			break
+		print returnMsg
+		fullMsgs.append(returnMsg)
+		s.send("OKMSGS")
+	s.close
+	return fullMsgs    
 
 
 
@@ -70,25 +74,28 @@ def loadUserData():
 	str = "GETFRIENDS " + username
 	returnMsg = send(str)
 	listOfFriends = returnMsg.split()
-	# with open(username + 'Friends' + '.txt', 'a+') as fo:
-	# 	for line in fo:
-	# 		listOfFriends.append(line)
-																	
-	# with open(username + 'Msgs' + '.txt', 'a+') as fo:						#Loads all the data into two arrays
-	# 		for line in fo:
-	# 			listOfMsgs.append(line)  
+
+	str2 = "GETPOSTS " + username
+	listOfMsgs = sendForMsg(str2)
+
 	if request.method=='POST':
 		if request.form["submit"] == "Post":
 			str = "ADDMSG" + ' ' + username + ' ' + request.form["tweet"];
 			print send(str)
 			# with open(username + 'Msgs' + '.txt', 'a+') as fo:
 			# 	fo.write(request.form["tweet"] + ' ' + "\n")					#Gets the values inside the textbox and adds to file
-			# 	return redirect("/user")
+			return redirect("/user")
 		elif request.form["submit"] == "Add":
 			#           errormsg = add_friend(request.form["Username"], username + 'Friends' + '.txt')
 			#           return redirect("/user")
 			str = "ADDFRIEND " + username + " " + request.form["Username"] + " " + username + "Friends" + ".txt"
 			errormsg = send(str)
+			if errormsg == "ALREADYADDED":
+				return render_template("user.html", user = username, messages = listOfMsgs, friends = listOfFriends, displayedPage = "Home",aferror = "Already Added!")
+			elif errormsg == "NOUSER":
+				return render_template("user.html", user = username, messages = listOfMsgs, friends = listOfFriends, displayedPage = "Home",aferror = "No such user!")
+			elif errormsg == "SELF":
+				return render_template("user.html", user = username, messages = listOfMsgs, friends = listOfFriends, displayedPage = "Home",aferror = "You can't add yourself!")	
 			return redirect("/user")			
 		elif request.form["submit"] == "Logout":
 			return redirect("/logout")
@@ -104,22 +111,30 @@ def loadUserData():
 
 @app.route('/friend/<friend>', methods = ["POST", "GET"])
 def loadFriendData(friend):
+	if 'username' not in session:
+		return redirect(url_for('home'))
 	username = session['username']											#Gets the username of the person
 	listOfMsgs = []
-	listOfFriends = []	
-	
-	with open(username + 'Friends' + '.txt', 'a+') as fo:
-		for line in fo:
-			listOfFriends.append(line)
-																	
-	with open(friend + 'Msgs' + '.txt', 'a+') as fo:						#Loads all the data into two arrays
-			for line in fo:
-				listOfMsgs.append(line)
+	listofFriends = []
+	str = "GETFRIENDS " + username
+	returnMsg = send(str)
+	listOfFriends = returnMsg.split()
+
+	str2 = "GETPOSTS " + friend
+	listOfMsgs = sendForMsg(str2)
+
 
 	if request.method=='POST':
 		if request.form["submit"] == "Add":
-				errormsg = add_friend(request.form["Username"], username + 'Friends' + '.txt')
-				return redirect(url_for('loadFriendData', friend = friend))			
+			str = "ADDFRIEND " + username + " " + request.form["Username"] + " " + username + "Friends" + ".txt"
+			errormsg = send(str)
+			if errormsg == "ALREADYADDED":
+				return render_template("user.html", user = username, messages = listOfMsgs, friends = listOfFriends, displayedPage = "Home",aferror = "Already Added!")
+			elif errormsg == "NOUSER":
+				return render_template("user.html", user = username, messages = listOfMsgs, friends = listOfFriends, displayedPage = "Home",aferror = "No such user!")
+			elif errormsg == "SELF":
+				return render_template("user.html", user = username, messages = listOfMsgs, friends = listOfFriends, displayedPage = "Home",aferror = "You can't add yourself!")	
+			return redirect("/user")			
 		elif request.form["submit"] == "Logout":
 			return redirect("/logout")
 
@@ -134,6 +149,8 @@ def loadFriendData(friend):
 
 @app.route('/delete', methods=["POST", "GET"])
 def delete():
+	if 'username' not in session:
+		return redirect(url_for('home'))
 	if request.method=='POST':
 		if request.form["submit"] == "Back":
 			return redirect("/user")

@@ -15,8 +15,8 @@
 				<input type = "submit" name = "submit" value = "Add"></input> 
 		</form>
 
-		<p> {{aferror}} </p>
-		<h3 style = "float: right; margin-top:20px; clear:right; padding-right:50px"> Your friends: </h3>
+		<p style = "float: right; clear: right; padding: 0 0 0 0;"> {{aferror}} </p>
+		<h3 style = "float: right; clear:right; padding-right:50px"> Your friends: </h3>
 		
 		<form method = "POST">
 		  <ul style = "float: right; margin-top:5px; clear:right; padding-right:50px" >
@@ -38,9 +38,26 @@
 		<p>
 			<form method ="POST">
 				<textarea id = "tweet" name="tweet" cols="50" rows ="5" maxlength ="140"></textarea>
-				<input type="submit" name="submit" value="Post"></input>
+				<div style="clear:left;">
+					<span id = "char_count"></span>
+					<input type="submit" name="submit" value="Post"></input>
 				</div>
 			</form>
 		</p> 
 	</body>
+	<script>
+	(function() {
+		var tweet = document.getElementById("tweet");
+		var chars = document.getElementById("char_count");
+		var post_button = document.getElementById("post_button");
+		tweet.addEventListener('focus',function(event) {updateCounter(event);}, false);
+		tweet.addEventListener('input',function(event) {updateCounter(event);}, false);
+		function updateCounter(event) {
+			var target = event.target;
+			var count = 140 - target.value.length;
+			var charMsg = '<b>' + count + '</b>' + " character(s) left";
+			chars.innerHTML = charMsg;
+		}
+	}());
+</script>
 </html>

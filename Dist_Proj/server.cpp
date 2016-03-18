@@ -102,6 +102,7 @@ int main(int argc, char **argv) {
     else if(tokens[0] == "ADDFRIEND"){
     //Add friend to list of friends
         string returnMsg = addFriend(tokens[1], tokens[2], tokens[3]);
+        cout << returnMsg << endl;
         memset(buff, 0, sizeof(buff));
         send(connfd, returnMsg.c_str(), strlen(returnMsg.c_str()), 0);
     }
@@ -118,11 +119,27 @@ int main(int argc, char **argv) {
         pos = s.find(' ');
         s.erase(0, pos + 1);
         message = s;
-        cout << username << ' ' << message << endl;
         addPost(username, message);
     }
-    else if (tokens[0] == "GETMESSAGES") {
-
+    else if(tokens[0] == "GETPOSTS"){
+    //Make a list of messages
+        vector<string> allMessages = getPosts(tokens[1]);
+        string amess;
+        for(int i = 0; i < allMessages.size(); i++){   //Send one message at a time
+            amess = allMessages[i];
+            send(connfd, amess.c_str(), strlen(amess.c_str()), 0);
+            while(1){          
+                memset(buff, 0, sizeof(buff));
+                recv(connfd, buff, sizeof(buff), 0);
+                string t(buff);
+                if(t == "OKMSGS")
+                    break;
+            }
+        }
+       
+        string last = "End of Messages";            //To indicate the end of all messages
+        send(connfd, last.c_str(), strlen(last.c_str()), 0);
+ 
     }
     else if (tokens[0] == "DELETE") {
         string returnMsg = deleteAccount(tokens[1]);
