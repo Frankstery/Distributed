@@ -15,6 +15,7 @@
 #include <string>
 #include <iostream>
 #include <cstring>
+#include <thread>
 #include "appFunctions.h"
 
 
@@ -30,9 +31,9 @@ using namespace std;
 int main(int argc, char **argv) {
     int			listenfd, connfd;  // Unix file descriptors
     struct sockaddr_in	servaddr;          // Note C use of struct
-    char		buff[MAXLINE];
-    char        buffer[MAXLINE];
-    time_t		ticks;
+    //char		buff[MAXLINE];
+    //char        buffer[MAXLINE];
+    //time_t		ticks;
 
     // 1. Create the socket
     if ((listenfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -63,6 +64,8 @@ int main(int argc, char **argv) {
         exit(3);
     }
     
+    initialize();
+    cout << "Done Initializing" << endl;
 
     for ( ; ; ) {
         
@@ -78,76 +81,12 @@ int main(int argc, char **argv) {
 	}
 
     fprintf(stderr, "Connected\n");
-    memset(buff, 0, sizeof(buff)); //Clear buffer
     
-    recv(connfd, buff, sizeof(buff), 0); //Wait and receive something
-    string s(buff);
-    istringstream recvMsg(s);
-    vector<string> tokens;
-    copy(istream_iterator<string>(recvMsg),istream_iterator<string>(),back_inserter(tokens)); //Parse the message
-    if (tokens[0] == "REGISTER") {
-        string returnMsg = regUser(tokens[1], tokens[2]);                          //Register user if message is to register 
-        //cout << returnMsg.c_str() << endl;
-        memset(buff, 0, sizeof(buff));                                             
-        strcpy(buff, returnMsg.c_str());                                           //Put string to buffer to be sent
-        send(connfd, buff, strlen(returnMsg.c_str()), 0);                          //Send to client
-    }
-    else if (tokens[0] == "LOGIN") {
-        string returnMsg = logUser(tokens[1], tokens[2]);                          //Register user if message is to register 
-        //cout << returnMsg.c_str() << endl;
-        memset(buff, 0, sizeof(buff));                                             
-        strcpy(buff, returnMsg.c_str());                                           //Put string to buffer to be sent
-        send(connfd, buff, strlen(returnMsg.c_str()), 0);    
-    }
-    else if(tokens[0] == "ADDFRIEND"){
-    //Add friend to list of friends
-        string returnMsg = addFriend(tokens[1], tokens[2], tokens[3]);
-        cout << returnMsg << endl;
-        memset(buff, 0, sizeof(buff));
-        send(connfd, returnMsg.c_str(), strlen(returnMsg.c_str()), 0);
-    }
-    else if(tokens[0] == "GETFRIENDS"){
-    //Get list of friends
-        string returnMsg = getFriends(tokens[1]);
-        send(connfd, returnMsg.c_str(), strlen(returnMsg.c_str()), 0);
-    }
-    else if (tokens[0] == "ADDMSG") {
-        string username, message;
-        username = tokens[1];
-        int pos = s.find(' ');
-        s.erase(0, pos + 1);
-        pos = s.find(' ');
-        s.erase(0, pos + 1);
-        message = s;
-        addPost(username, message);
-    }
-    else if(tokens[0] == "GETPOSTS"){
-    //Make a list of messages
-        vector<string> allMessages = getPosts(tokens[1]);
-        string amess;
-        for(int i = 0; i < allMessages.size(); i++){   //Send one message at a time
-            amess = allMessages[i];
-            send(connfd, amess.c_str(), strlen(amess.c_str()), 0);
-            while(1){          
-                memset(buff, 0, sizeof(buff));
-                recv(connfd, buff, sizeof(buff), 0);
-                string t(buff);
-                if(t == "OKMSGS")
-                    break;
-            }
-        }
-       
-        string last = "End of Messages";            //To indicate the end of all messages
-        send(connfd, last.c_str(), strlen(last.c_str()), 0);
- 
-    }
-    else if (tokens[0] == "DELETE") {
-        string returnMsg = deleteAccount(tokens[1]);
-        send(connfd, returnMsg.c_str(), strlen(returnMsg.c_str()), 0);
-    }
+    thread t1(processRequest, connfd);
+    t1.detach();
 
     // 6. Close the connection with the current client and go back
     //    for another.
-    close(connfd);
+    
     }
 }

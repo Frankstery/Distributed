@@ -1,7 +1,9 @@
 #include "appFunctions.h"
 
 using namespace std;
+mutex allUsersMutex;
 
+unordered_map<string, Person*> mapping;
 //Function to split the string base on white space
 vector<string> splitter(const string& line){
     vector<string> tokens;
@@ -11,9 +13,13 @@ vector<string> splitter(const string& line){
 }
 
 
+Person::Person(const string& userName): name(userName) {}
+
 string logUser(const string& user, const string& pass) {
+    //this_thread::sleep_for(chrono::milliseconds(100));    
     string line;
     ifstream listUsers;
+    lock_guard<std::mutex> guard(allUsersMutex);
     listUsers.open("listOfUsers.txt");
     while(getline(listUsers, line)){
         //Split line by white space
@@ -30,8 +36,10 @@ string logUser(const string& user, const string& pass) {
 
 
 string regUser(const string& user, const string& pass) {
+    //this_thread::sleep_for(chrono::milliseconds(100));
 	string line; 								
 	ifstream listUsers;
+    lock_guard<std::mutex> guard(allUsersMutex);
 	listUsers.open("listOfUsers.txt");
 	while (getline(listUsers,line)) {
 		vector<string> tokens;
@@ -40,6 +48,7 @@ string regUser(const string& user, const string& pass) {
     	if (tokens[0] == user) {return "TAKEN";}		
 	}
 	listUsers.close();
+    addToMapping(user,mapping);
 	ofstream listUsersW ("listOfUsers.txt", ios_base::app);  //Open up file to be written, ios_base::app makes it able to append
 	listUsersW << user + ' ' + pass + " \n";
 	const string fileName = user + "Msgs" ".txt";
@@ -53,8 +62,9 @@ string regUser(const string& user, const string& pass) {
 	return "REGISTERED";		
 }
 
-string addFriend(const string& user, const string& userFriend, const string& fileName){
+string Person::addFriend(const string& user, const string& userFriend, const string& fileName){
     //If trying to add self, return "SELF"
+    lock_guard<std::mutex> guard(fileFriends);
     if(user == userFriend)
         return "SELF";
     ifstream listUsers;
@@ -86,11 +96,13 @@ string addFriend(const string& user, const string& userFriend, const string& fil
     return "NOUSER";
 }
 
-string getFriends(const string& user){
+string Person::getFriends(const string& user){
+    //this_thread::sleep_for(chrono::milliseconds(100));   
     string allNames = "";
     string fileName = user + "Friends.txt";
     string name;
     ifstream listUsers;
+    lock_guard<std::mutex> guard(fileFriends);
     listUsers.open(fileName.c_str());
     while(listUsers >> name){
         allNames = allNames + name + " ";
@@ -98,8 +110,9 @@ string getFriends(const string& user){
     return allNames;
 }
 
-string addPost(const string& user, const string& msg) {
+string Person::addPost(const string& user, const string& msg) {
 	string s = user + "Msgs.txt";
+    lock_guard<std::mutex> guard(filePosts);
 	ofstream userMsgs (s.c_str(), ios_base::app);
 	userMsgs << msg << " \n" << "\n";
 	time_t ticks = time(NULL);
@@ -110,7 +123,9 @@ string addPost(const string& user, const string& msg) {
 	return "SUCCESS";
 }
 
-vector<string> getPosts(const string& user){
+vector<string> Person::getPosts(const string& user){
+    //this_thread::sleep_for(chrono::milliseconds(100));
+    lock_guard<std::mutex> guard(filePosts);
     vector<string> allMessages;
    
     //Creating the separator to show different messages
@@ -156,8 +171,11 @@ void removeLineFromFile(const string& file, const string& user) {
 }
 
 
-string deleteAccount(const string& user) {
+string Person::deleteAccount(const string& user) {
+    lock_guard<std::mutex> guard(allUsersMutex);
+    lock_guard<std::mutex> guard2(fileFriends);
 	removeLineFromFile("listOfUsers.txt", user);
+    int other;
 	DIR *dir = NULL;
 	struct dirent *ent;
 	if ((dir = opendir (".")) != NULL) { 		//Open current directory
@@ -168,8 +186,18 @@ string deleteAccount(const string& user) {
 	    if (s == userFriends || s == userMsgs) {
             remove(s.c_str()); //If it is the users Friends or Msgs files, remove them
         }
-	    else if (s.find("Friends.txt") != string::npos) {			  //Delete the user from every other persons' friends list
+	    else if ((other = s.find("Friends.txt")) != string::npos) {			  //Delete the user from every other persons' friends list
+            string sub = s.substr(0, other);
+            cout << sub << endl;
+            cout << mapping.size() << endl;
+            unordered_map<string,Person*>::const_iterator got = mapping.find(sub);
+            if (got == mapping.end()) {
+                cout << "End of map";
+                return "No work";
+            }
+            got->second->fileFriends.lock();
 	    	removeLineFromFile(s,user);
+            got->second->fileFriends.unlock();
 	    }
 	  }
 	  closedir (dir);
@@ -179,4 +207,104 @@ string deleteAccount(const string& user) {
 	return "SUCCESS";
 }
 
+string Person::getName() {return name;}
+
+void addToMapping(const std::string& user, unordered_map<std::string, Person*>& mapping) {
+    Person* person = new Person(user);
+    mapping.insert({user,person});
+}
+
+void initialize() {
+    ifstream listUsers;
+    listUsers.open("listOfUsers.txt");
+    string line;
+    while(getline(listUsers, line)){
+        vector<string> tokens = splitter(line);
+        //If adding is on list of users
+        //cout << tokens[0] << endl;
+        //cout << mapping.size();
+        addToMapping(tokens[0],mapping);
+        //cout << mapping.size();
+        for (auto& x: mapping) {
+            cout << x.second->getName() << endl;
+        }
+    }    
+}
+
+void processRequest(int connfd) {
+    char    buff[4096];
+    memset(buff, 0, sizeof(buff)); //Clear buffer
+    recv(connfd, buff, sizeof(buff), 0); //Wait and receive something
+    string s(buff);
+    cout << s << endl;
+    istringstream recvMsg(s);
+    vector<string> tokens;
+    copy(istream_iterator<string>(recvMsg),istream_iterator<string>(),back_inserter(tokens)); //Parse the message
+    if (tokens[0] == "REGISTER") {
+        string returnMsg = regUser(tokens[1], tokens[2]);                          //Register user if message is to register 
+        //cout << returnMsg.c_str() << endl;
+        memset(buff, 0, sizeof(buff));                                             
+        strcpy(buff, returnMsg.c_str());                                           //Put string to buffer to be sent
+        send(connfd, buff, strlen(returnMsg.c_str()), 0);                          //Send to client
+    }
+    else if (tokens[0] == "LOGIN") {
+        string returnMsg = logUser(tokens[1], tokens[2]);                          //Register user if message is to register 
+        //cout << returnMsg.c_str() << endl;
+        memset(buff, 0, sizeof(buff));                                             
+        strcpy(buff, returnMsg.c_str());                                           //Put string to buffer to be sent
+        send(connfd, buff, strlen(returnMsg.c_str()), 0);    
+    }
+    else if(tokens[0] == "ADDFRIEND"){
+    //Add friend to list of friends
+        unordered_map<string,Person*>::const_iterator got = mapping.find(tokens[1]);
+        string returnMsg = got->second->addFriend(tokens[1], tokens[2], tokens[3]);
+        cout << returnMsg << endl;
+        memset(buff, 0, sizeof(buff));
+        send(connfd, returnMsg.c_str(), strlen(returnMsg.c_str()), 0);
+    }
+    else if(tokens[0] == "GETFRIENDS"){
+    //Get list of friends
+        unordered_map<string,Person*>::const_iterator got = mapping.find(tokens[1]);
+        string returnMsg = got->second->getFriends(tokens[1]);
+        send(connfd, returnMsg.c_str(), strlen(returnMsg.c_str()), 0);
+    }
+    else if (tokens[0] == "ADDMSG") {
+        string username, message;
+        username = tokens[1];
+        int pos = s.find(' ');
+        s.erase(0, pos + 1);
+        pos = s.find(' ');
+        s.erase(0, pos + 1);
+        message = s;
+        unordered_map<string,Person*>::const_iterator got = mapping.find(tokens[1]);
+        got->second->addPost(username, message);
+    }
+    else if(tokens[0] == "GETPOSTS"){
+    //Make a list of messages
+        unordered_map<string,Person*>::const_iterator got = mapping.find(tokens[1]);
+        vector<string> allMessages = got->second->getPosts(tokens[1]);
+        string amess;
+        for(int i = 0; i < allMessages.size(); i++){   //Send one message at a time
+            amess = allMessages[i];
+            send(connfd, amess.c_str(), strlen(amess.c_str()), 0);
+            while(1){          
+                memset(buff, 0, sizeof(buff));
+                recv(connfd, buff, sizeof(buff), 0);
+                string t(buff);
+                if(t == "OKMSGS")
+                    break;
+            }
+        }
+       
+        string last = "End of Messages";            //To indicate the end of all messages
+        send(connfd, last.c_str(), strlen(last.c_str()), 0);
+ 
+    }
+    else if (tokens[0] == "DELETE") {
+        unordered_map<string,Person*>::const_iterator got = mapping.find(tokens[1]);
+        string returnMsg = got->second->deleteAccount(tokens[1]);
+        send(connfd, returnMsg.c_str(), strlen(returnMsg.c_str()), 0);
+    }
+    close(connfd);
+}
 
