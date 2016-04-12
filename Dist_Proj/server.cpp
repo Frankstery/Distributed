@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
         exit(3);
     }
     
-    initialize();
+    initialize(); //Initialize map that contains a mapping from already existing users to their person object.
     cout << "Done Initializing" << endl;
 
     for ( ; ; ) {

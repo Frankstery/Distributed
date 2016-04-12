@@ -3,7 +3,8 @@
 using namespace std;
 mutex allUsersMutex;
 
-unordered_map<string, Person*> mapping;
+unordered_map<string, Person*> mapping; //Creating a mapping to the User's name and its Person object
+
 //Function to split the string base on white space
 vector<string> splitter(const string& line){
     vector<string> tokens;
@@ -15,8 +16,7 @@ vector<string> splitter(const string& line){
 
 Person::Person(const string& userName): name(userName) {}
 
-string logUser(const string& user, const string& pass) {
-    //this_thread::sleep_for(chrono::milliseconds(100));    
+string logUser(const string& user, const string& pass) {    
     string line;
     ifstream listUsers;
     lock_guard<std::mutex> guard(allUsersMutex);
@@ -36,10 +36,9 @@ string logUser(const string& user, const string& pass) {
 
 
 string regUser(const string& user, const string& pass) {
-    //this_thread::sleep_for(chrono::milliseconds(100));
 	string line; 								
 	ifstream listUsers;
-    lock_guard<std::mutex> guard(allUsersMutex);
+    lock_guard<std::mutex> guard(allUsersMutex);  //Lock the file that contains all users
 	listUsers.open("listOfUsers.txt");
 	while (getline(listUsers,line)) {
 		vector<string> tokens;
@@ -64,7 +63,7 @@ string regUser(const string& user, const string& pass) {
 
 string Person::addFriend(const string& user, const string& userFriend, const string& fileName){
     //If trying to add self, return "SELF"
-    lock_guard<std::mutex> guard(fileFriends);
+    lock_guard<std::mutex> guard(fileFriends);  //Lock your own friend file. 
     if(user == userFriend)
         return "SELF";
     ifstream listUsers;
@@ -96,8 +95,7 @@ string Person::addFriend(const string& user, const string& userFriend, const str
     return "NOUSER";
 }
 
-string Person::getFriends(const string& user){
-    //this_thread::sleep_for(chrono::milliseconds(100));   
+string Person::getFriends(const string& user){  
     string allNames = "";
     string fileName = user + "Friends.txt";
     string name;
@@ -124,7 +122,6 @@ string Person::addPost(const string& user, const string& msg) {
 }
 
 vector<string> Person::getPosts(const string& user){
-    //this_thread::sleep_for(chrono::milliseconds(100));
     lock_guard<std::mutex> guard(filePosts);
     vector<string> allMessages;
    
@@ -172,9 +169,12 @@ void removeLineFromFile(const string& file, const string& user) {
 
 
 string Person::deleteAccount(const string& user) {
-    lock_guard<std::mutex> guard(allUsersMutex);
-    lock_guard<std::mutex> guard2(fileFriends);
+    for (auto& x: mapping) {
+        cout << x.second->getName() << endl;
+    }
+    allUsersMutex.lock();
 	removeLineFromFile("listOfUsers.txt", user);
+    allUsersMutex.unlock();
     int other;
 	DIR *dir = NULL;
 	struct dirent *ent;
@@ -190,16 +190,22 @@ string Person::deleteAccount(const string& user) {
             string sub = s.substr(0, other);
             cout << sub << endl;
             cout << mapping.size() << endl;
-            unordered_map<string,Person*>::const_iterator got = mapping.find(sub);
+            unordered_map<string,Person*>::const_iterator got = mapping.find(sub); //Find the name of the persons list we're altering
             if (got == mapping.end()) {
-                cout << "End of map";
-                return "No work";
+                /*cout << "End of map" << endl;
+                for (auto& x: mapping) {
+                     cout << x.second->getName() << endl;
+                }*/
+                return "ERROR";
             }
-            got->second->fileFriends.lock();
+            got->second->fileFriends.lock();  //Lock the friend list of the person we're deleting from 
 	    	removeLineFromFile(s,user);
             got->second->fileFriends.unlock();
 	    }
 	  }
+      unordered_map<string,Person*>::const_iterator got = mapping.find(user);
+      delete got->second; //Free from heap
+      cout << "Erased from map: " << mapping.erase(user) << endl;
 	  closedir (dir);
 	} else {
 	  return "COULD NOT OPEN DIRECTORY";
@@ -214,7 +220,7 @@ void addToMapping(const std::string& user, unordered_map<std::string, Person*>& 
     mapping.insert({user,person});
 }
 
-void initialize() {
+void initialize() {  //Initialize initial mapping for users that have already been created
     ifstream listUsers;
     listUsers.open("listOfUsers.txt");
     string line;
@@ -225,9 +231,9 @@ void initialize() {
         //cout << mapping.size();
         addToMapping(tokens[0],mapping);
         //cout << mapping.size();
-        for (auto& x: mapping) {
+        /*for (auto& x: mapping) {
             cout << x.second->getName() << endl;
-        }
+        }*/
     }    
 }
 
@@ -303,6 +309,7 @@ void processRequest(int connfd) {
     else if (tokens[0] == "DELETE") {
         unordered_map<string,Person*>::const_iterator got = mapping.find(tokens[1]);
         string returnMsg = got->second->deleteAccount(tokens[1]);
+        cout << returnMsg << endl;
         send(connfd, returnMsg.c_str(), strlen(returnMsg.c_str()), 0);
     }
     close(connfd);

@@ -36,23 +36,25 @@ def sendForMsg(lineOfText):
 
 @app.route("/", methods=['post', 'get'])
 def home():
-    if request.method=='POST':
-        if request.form["submit"] == "Login":
-            str = "LOGIN" + ' ' + request.form["Username"] + ' ' + request.form["Password"] + " \n"
-            returnMsg = send(str)
-            if returnMsg == "LOGIN":
-                session["username"] = request.form["Username"]
-                return redirect("/user")
-            else:
-                return render_template("login.html", error = "Invalid Username or Password")   
-        elif request.form["submit"] == "Register":
-            str = "REGISTER" + ' ' + request.form["Username"] + ' ' + request.form["Password"] + " \n"
-            returnMsg = send(str)
-            if returnMsg == "REGISTERED":
+	if 'username' in session:
+		return redirect("/user")
+	if request.method=='POST':
+		if request.form["submit"] == "Login":
+			str = "LOGIN" + ' ' + request.form["Username"] + ' ' + request.form["Password"] + " \n"
+			returnMsg = send(str)
+			if returnMsg == "LOGIN":
+				session["username"] = request.form["Username"]
+				return redirect("/user")
+			else:
+				return render_template("login.html", error = "Invalid Username or Password")   
+		elif request.form["submit"] == "Register":
+			str = "REGISTER" + ' ' + request.form["Username"] + ' ' + request.form["Password"] + " \n"
+			returnMsg = send(str)
+			if returnMsg == "REGISTERED":
 				return redirect(url_for("welcomeToUser", loginName = request.form["Username"]))
-            else:
-                return render_template("login.html", error = "Username already taken")         
-    return render_template("login.html")
+			else:
+				return render_template("login.html", error = "Username already taken")         
+	return render_template("login.html")
 
 
 @app.route("/welcome", methods=['post', 'get'])
@@ -158,6 +160,7 @@ def delete():
 			str = "DELETE " + session['username']
 			send(str)
 			#delete_account(session['username'])
+			session.pop('username', None)
 			return redirect(url_for('home'))
 	return render_template("removeAccount.html")
 	
