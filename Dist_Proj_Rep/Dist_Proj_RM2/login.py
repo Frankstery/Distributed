@@ -2,38 +2,126 @@ from flask import Flask, session, redirect, url_for, escape, request, render_tem
 import os, socket
 app = Flask(__name__)
 
+ports = [13003,13065,13001]
+status = 0
+init = 1
+# def setPrimary():
+# 	s = socket.socket()         # Create a socket object
+# 	s.settimeout(2)
+# 	host = "127.0.0.1" # Where do you want to connect
+# 	port = ports[0]               # port to connect to
+# 	try:
+# 		print port;
+# 		s.connect((host, port))
+# 		lineOfTest = "Primary"
+# 		s.send(lineOfText.encode())
+# 		returnMsg =s.recv(1024)
+# 		print returnMsg;
+# 		s.close
+# 		return;
+# 	except:
+# 		print "Couldn't connect"
+# 		failPort = ports[0]
+# 		ports.pop(0)
+# 		ports.append(failPort)
+# 		return
+
+
 
 def send(lineOfText):
 	s = socket.socket()         # Create a socket object
 	host = "127.0.0.1" # Where do you want to connect
-	port = 13002                # port to connect to
-	s.connect((host, port))
-	s.send(lineOfText.encode())
-	returnMsg =s.recv(1024)
-	return returnMsg
-	s.close                     # Close the socket when done
+	#global ports
+	global status
+	global init
+	port = ports[0]               # port to connect to
+
+	try:
+		s.connect((host, port))
+		print port
+		print status
+		if init == 1:
+			Primary = "Primary"
+			s.send(Primary.encode())
+			print s.recv(1024)
+			status == 0;
+			s.close
+		elif status == 1:
+			s.connect((host, port))
+			Primary = "Primary"
+			s.send(Primary.encode())
+			print s.recv(1024)
+			init = 0
+			s.close
+		else:
+			s.send(lineOfText.encode())
+			return s.recv(1024)
+			return
+
+		s = socket.socket()         # Create a socket object
+		host = "127.0.0.1" # Where do you want to connect
+		port = ports[0]               # port to connect to	
+		s.connect((host, port))
+		s.send(lineOfText.encode())
+		returnMsg =s.recv(1024)
+		print returnMsg;
+		s.close
+		return returnMsg	                     # Close the socket when done
+	except: 
+		print "Couldn't connect"
+		failPort = ports[0]
+		ports.pop(0)
+		ports.append(failPort)
+		status = 1
+		return send(lineOfText)
+
 
 def sendForMsg(lineOfText):
 	s = socket.socket()         # Create a socket object
 	host = "127.0.0.1" # Where do you want to connect
-	port = 13002                # port to connect to
-	s.connect((host, port))
-	s.send(lineOfText.encode())
-	fullMsgs = [];
-	last = "End of Messages"
-	while 1:
-		returnMsg = s.recv(1024)
-		if returnMsg == last:
-			s.send("DONEMSGS")
-			break
-		print returnMsg
-		fullMsgs.append(returnMsg)
-		s.send("OKMSGS")
-	s.close
-	return fullMsgs    
+	port = ports[0]                # port to connect to
+	try:
+		s.connect((host, port))
+		s.send(lineOfText.encode())
+		fullMsgs = [];
+		last = "End of Messages"
+		while 1:
+			returnMsg = s.recv(1024)
+			if returnMsg == last:
+				s.send("DONEMSGS")
+				break
+			print returnMsg
+			fullMsgs.append(returnMsg)
+			s.send("OKMSGS")
+		s.close
+		return fullMsgs
+	except:
+		print "Couldn't connect"
+		failPort = ports[0]
+		ports.pop(0)
+		ports.append(failPort)
+		sendForMsg(lineOfText)
+
+############################################## Testing threads
+# for x in range(0,50):
+# 	send("REGISTER " + "ZZ" + str(x) + ' ' + "ZZ")
+
+# for x in range(0,50):
+# 	send("LOGIN " + "ZZ" + str(x) + ' ' + "ZZ")
 
 
+# for x in range(0,1000):
+#  	send("ADDFRIEND " + "ZZ0" + " " + "ZZ" + str(x) + " " + "ZZ0" + "Friends" + ".txt")
 
+# for x in range(0,1000):
+# 	send("ADDMSG " + ' ' + "ZZ" + str(x) + ' ' + "Hello")
+# 	send("GETPOSTS " + "ZZ" + str(x))
+# 	send("ADDMSG " + ' ' + "ZZ" + str(x) + ' ' + "Hello1")
+
+# for x in range(0,50):
+# 	send("DELETE " + "ZZ" + str(x))	
+
+##############################################
 @app.route("/", methods=['post', 'get'])
 def home():
 	if 'username' in session:
@@ -42,6 +130,7 @@ def home():
 		if request.form["submit"] == "Login":
 			str = "LOGIN" + ' ' + request.form["Username"] + ' ' + request.form["Password"] + " \n"
 			returnMsg = send(str)
+			print returnMsg;
 			if returnMsg == "LOGIN":
 				session["username"] = request.form["Username"]
 				return redirect("/user")
@@ -75,7 +164,9 @@ def loadUserData():
 	listofFriends = []
 	str = "GETFRIENDS " + username
 	returnMsg = send(str)
+	print returnMsg;
 	listOfFriends = returnMsg.split()
+	print listOfFriends;
 
 	str2 = "GETPOSTS " + username
 	listOfMsgs = sendForMsg(str2)

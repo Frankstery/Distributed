@@ -23,8 +23,9 @@
 #include <thread>
 #include <mutex>
 #include <unordered_map> 
+#include "rm.h"
 
-void processRequest(int connfd);
+void processRequest(int connfd, RepManager* pr);
 std::string regUser(const std::string& user, const std::string& pass);
 std::string logUser(const std::string& user, const std::string& pass);
 

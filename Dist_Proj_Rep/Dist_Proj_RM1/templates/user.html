@@ -1,0 +1,63 @@
+<html>
+	<head>
+		<title> Distributed Project </title>
+	</head>
+
+	<body>
+	 	</h1>
+	 	<form method = "POST" id = "login_Form" style = "float: right;">
+				<input type = "submit" name = "submit" value = "Logout"></input>
+				<input type = "submit" name = "submit" value = "Delete Account"></input>
+		</form>
+
+	 	<form method = "POST" id = "login_Form" style = "float: right; clear: right;">
+				<input type = "text" placeholder = "Username" name = "Username"></input>
+				<input type = "submit" name = "submit" value = "Add"></input> 
+		</form>
+
+		<p style = "float: right; clear: right; padding: 0 0 0 0;"> {{aferror}} </p>
+		<h3 style = "float: right; clear:right; padding-right:50px"> Following: </h3>
+		
+		<form method = "POST">
+		  <ul style = "float: right; margin-top:5px; clear:right; padding-right:50px" >
+		  {% for friend in friends %}
+		  <li><input type = "submit" name = "submit" value = {{friend}} ></input></li>
+		  {% endfor %}
+		  </ul>
+		</form>
+
+		<h1> Welcome {{user}} !</h1>
+		<h3> Viewing {{displayedPage}} </h3>
+
+    <ul style = "padding-left: 2px; list-style-type: none; width: 40%">
+    {% for message in messages %}
+    <li style = "border-bottom: solid 1px #c2c2a3; padding: 10px 10px 20px 0px;" >{{message}}</li>
+    {% endfor %}
+    </ul>		
+    	<label for "tweet"> Make a post! (Up to 140 characters)</label>
+		<p>
+			<form method ="POST">
+				<textarea id = "tweet" name="tweet" cols="50" rows ="5" maxlength ="140"></textarea>
+				<div style="clear:left;">
+					<span id = "char_count"></span>
+					<input type="submit" name="submit" value="Post"></input>
+				</div>
+			</form>
+		</p> 
+	</body>
+	<script>
+	(function() {
+		var tweet = document.getElementById("tweet");
+		var chars = document.getElementById("char_count");
+		var post_button = document.getElementById("post_button");
+		tweet.addEventListener('focus',function(event) {updateCounter(event);}, false);
+		tweet.addEventListener('input',function(event) {updateCounter(event);}, false);
+		function updateCounter(event) {
+			var target = event.target;
+			var count = 140 - target.value.length;
+			var charMsg = '<b>' + count + '</b>' + " character(s) left";
+			chars.innerHTML = charMsg;
+		}
+	}());
+</script>
+</html>

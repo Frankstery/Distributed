@@ -7,7 +7,6 @@
 	 	</h1>
 	 	<form method = "POST" id = "login_Form" style = "float: right;">
 				<input type = "submit" name = "submit" value = "Logout"></input>
-				<input type = "submit" name = "submit" value = "Delete Account"></input>
 		</form>
 
 	 	<form method = "POST" id = "login_Form" style = "float: right; clear: right;">
@@ -28,17 +27,13 @@
 
 		<h1> Welcome {{user}} !</h1>
 		<h3> Viewing {{displayedPage}} </h3>
-    <ul style = "padding-left: 2px; list-style-type: none; width: 40%">
+
+    <ul style = "padding-left: 2px; list-style-type: none; width: 50%">
     {% for message in messages %}
     <li style = "border-bottom: solid 1px #c2c2a3; padding: 10px 10px 20px 0px;" >{{message}}</li>
     {% endfor %}
     </ul>		
 		<p>
-			<form method ="POST">
-				<textarea name="tweet" cols="50" rows ="5"> </textarea>
-				<input type="submit" name="submit" value="Post"></input>
-			</form>
-		</p> 
-	</body>
+ 
 
 </html>

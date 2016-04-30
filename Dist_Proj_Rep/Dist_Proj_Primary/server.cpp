@@ -17,20 +17,21 @@
 #include <cstring>
 #include <thread>
 #include "appFunctions.h"
+#include "rm.h"
 
 
 #define	MAXLINE		4096	// max text line length
 #define	BUFFSIZE	8192    // buffer size for reads and writes
 #define  SA struct sockaddr
 #define	LISTENQ		1024	// 2nd argument to listen()
-#define PORT_NUM    13002
+#define PORT_NUM    13003
 
 
 using namespace std;
 
 int main(int argc, char **argv) {
     int			listenfd, connfd;  // Unix file descriptors
-    struct sockaddr_in	servaddr;          // Note C use of struct
+    struct sockaddr_in	servaddr, cli_addr;// Note C use of struct
     //char		buff[MAXLINE];
     //char        buffer[MAXLINE];
     //time_t		ticks;
@@ -65,9 +66,14 @@ int main(int argc, char **argv) {
     }
     
     initialize(); //Initialize map that contains a mapping from already existing users to their person object.
+    RepManager* pr = new RepManager(0);
+
     cout << "Done Initializing" << endl;
 
+
+
     for ( ; ; ) {
+
         
     // 5. Block until someone connects.
     //    We could provide a sockaddr if we wanted to know details of whom
@@ -75,18 +81,24 @@ int main(int argc, char **argv) {
     //    Last arg is where to put the size of the sockaddr if
     //    we asked for one
 	fprintf(stderr, "Ready to connect.\n");
-    if ((connfd = accept(listenfd, (SA *) NULL, NULL)) == -1) {
+    memset(&cli_addr, 0, sizeof(cli_addr));
+    socklen_t cli_len = sizeof(cli_addr);
+    if ((connfd = accept(listenfd, (SA *) &cli_addr, &cli_len)) == -1) {
         perror("accept failed");
         exit(4);
 	}
 
+
     fprintf(stderr, "Connected\n");
+    //cout << inet_ntoa(cli_addr.sin_addr) << endl;
+/*    cout << cli_addr.sin_addr.s_addr << endl;
+    cout << getsockname(listenfd, (SA *) &cli_addr, (socklen_t*)&cli_len) <<endl;
+    cout << cli_addr.sin_addr.s_addr << endl;*/
     
-    thread t1(processRequest, connfd);
+    thread t1(processRequest, connfd, pr);
     t1.detach();
 
     // 6. Close the connection with the current client and go back
     //    for another.
-    
     }
 }
